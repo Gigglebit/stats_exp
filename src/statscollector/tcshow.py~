@@ -31,7 +31,7 @@ def tcshow (e):
     e.wait()
     e.clear()
     #tclock=threading.Lock()
-    tclock = myGlobal.tclock
+    tclock = myGlobal.tclock()
     idx = myGlobal.idx
     global prev_t
     curr_t =time.time()

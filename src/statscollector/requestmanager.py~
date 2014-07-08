@@ -11,11 +11,10 @@ tc_result = {}
 
 def cal_bw_delay(entries_range,idx,path,link_cap,tc_result):
 	'''
-	This function calculates bw and delay for requested entries:
 	      |<---entries_range->|
 	------|-------------------|---->t
 	    start                idx
-	And then it re
+		
 
 	'''
 	j2k_stats = []

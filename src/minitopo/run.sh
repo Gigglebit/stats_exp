@@ -5,7 +5,6 @@ python minitopo.py --exp exp1 \
         --btnSpeed 5 \
 		--hs_bw 10 \
 		--maxq 100 \
-		--intf1 eth0 \
 		--intf2 eth1 \
 
 echo "cleaning up..."
