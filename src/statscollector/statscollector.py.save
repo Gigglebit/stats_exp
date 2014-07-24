@@ -11,9 +11,6 @@ def hello():
 
 @route("/stats/<start_ip>/<end_ip>/<earliest_idx>/<num_entries>",method='GET')
 def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
-   '''
-   This function is the main Northbound API 
-   '''
    link_capacity = find_link_cap(start_ip,end_ip)
    path = find_path(start_ip, end_ip)
    print path
@@ -32,6 +29,11 @@ def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
    return result
 
 def find_link_cap(start_ip,end_ip):
+   '''
+   This section is a simple version of finding link capacity
+   In the future improvement, it should grab this info from mininet setup
+   or sending a small amount of packets with timestamps to figure out RTT as well as
+   '''
    if start_ip == "10.0.0.2":
       retVal = [5,10]#[5Mbps,10Mbps]
       return retVal
@@ -43,7 +45,7 @@ def find_path(start_ip,end_ip):
       retVal = ["s1-eth2","eth1"]
       return retVal
    if end_ip == "10.0.0.2":
-      retVal = ["s2-eth2","s1-eth1"]
+      retVal = ["s2-eth2","eth0"]
       return retVal
 # STATICALLY DEFINE LINKS IN HERE.
 

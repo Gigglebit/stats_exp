@@ -83,7 +83,7 @@ class SimpleTopo(Topo):
            self.addLink( host, switch, bw=int(args.hs_bw))
 #, max_queue_size=int(args.maxq), use_htb=True)
            if lastSwitch:
-               self.addLink(switch, lastSwitch, bw=int(args.btn))
+               self.addLink(switch, lastSwitch, bw=int(args.btn),delay=int(args.delay))
 #, max_queue_size=int(args.maxq), use_htb=True)
            lastSwitch = switch
        self.addLink(dhcp, lastSwitch, bw=int(args.hs_bw))
@@ -95,7 +95,7 @@ def Test():
    "Create network and run simple performance test"
    topo = SimpleTopo(k=2)
    net = Mininet(topo=topo,
-                 host=CPULimitedHost, link=TCLink, controller=RemoteController)
+                 host=CPULimitedHost, link=TCLink)#, controller=RemoteController)
    s1 = net.getNodeByName('s1')
    s2 = net.getNodeByName('s2')
    if args.intf1 is not None:
