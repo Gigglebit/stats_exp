@@ -50,6 +50,7 @@ def cal_bw_delay(entries_range,idx,path,link_cap,tc_result):
 				else:
 					#calculate being used bw. bw = delta sent out bytes/delta time between two samplings
 					delta_sentB=int(tc_result[i][j]['SentB'])-int(tc_result[i-1][j]['SentB'])
+					delta_sentP=int(tc_result[i][j]['SentP'])-int(tc_result[i-1][j]['SentP'])
 					delta_t = float(tc_result[i][j]['delta_t'])
 					bw = delta_sentB*8/(delta_t*1000000) #B/S ->Mbps *8/1000000
 					#available bandwidth = link capacity - being used bandwidth
@@ -62,9 +63,13 @@ def cal_bw_delay(entries_range,idx,path,link_cap,tc_result):
 					SentP = float(tc_result[i][j]['SentP'])
 					if SentP!=0:
 						Psize = float(tc_result[i][j]['SentB'])/float(tc_result[i][j]['SentP'])
+						#Psize = float(delta_sentB) / float(delta_sentP)
 					else:
 						Psize = 1000	
 					delay = int(tc_result[i][j]['BackP'])*Psize*8/(float(link_cap[link_ct])*1000) #ms
+					#if Psize>1512: 
+					  #print Psize, delta_sentB, delta_sentP
+					  #Psize = 1512
 					#sum up all the delays along the path
 					delay_sum += delay
 					if 'P_Delay' in tc_result[i][j]:

@@ -126,7 +126,9 @@ def Test():
                      #args=("%s"%args.iface,float(args.sampleR),int(args.nQ), "%s_%s"% (args.exp,args.out)))   
        
 
-              
+   for host in net.hosts:
+       host.cmd('tc qdisc del dev %s-eth0 root'%host)              
+       host.cmd('tc qdisc add dev %s-eth0 root tbf rate 10Mbit latency 2s burst 15k mtu 1512'%host)              
    #start mininet CLI
    CLI(net)
    #terminate
