@@ -75,19 +75,25 @@ class SimpleTopo(Topo):
        super(SimpleTopo, self).__init__()
        self.k = k
        dhcp = self.addHost('dhcp')
-       lastSwitch = None
-       for i in irange(1, k):
-           host = self.addHost('h%s' % i)
-           switch = self.addSwitch('s%s' % i)
-           # 10 Mbps, 5ms delay, 1% loss, 1000 packet queue
-           self.addLink( host, switch, bw=int(args.hs_bw))
-#, max_queue_size=int(args.maxq), use_htb=True)
-           if lastSwitch:
-               self.addLink(switch, lastSwitch, bw=int(args.btn),delay=int(args.delay))
-#, max_queue_size=int(args.maxq), use_htb=True)
-           lastSwitch = switch
-       self.addLink(dhcp, lastSwitch, bw=int(args.hs_bw))
-#, max_queue_size=int(args.maxq), use_htb=True)
+       s1 = self.addSwitch('s1')
+       s2 = self.addSwitch('s2')
+       s3 = self.addSwitch('s3')
+       s4 = self.addSwitch('s4')
+       #s5 = self.addSwitch('s5')
+       h1 = self.addHost('h1')
+       h2 = self.addHost('h2')
+
+       self.addLink( s1, h1, bw=int(args.hs_bw))
+       self.addLink( s2, h2, bw=int(args.hs_bw))
+
+       self.addLink( s1, s3, bw=int(args.btn), delay=1) # 1us in order to show the backlog num of bytes
+       self.addLink( s4, s2, bw=int(args.btn), delay=1) # 1us in order to show the backlog num of bytes
+
+       self.addLink( s3, s4, bw=int(args.btn),delay=int(args.delay))
+       self.addLink( dhcp, s2, bw=int(args.hs_bw))
+
+       #self.addLink( s1, s5, bw=int(args.hs_bw))
+       #self.addLink( s2, s5, bw=int(args.hs_bw))
        
 topos = { 'mytopo': ( lambda: SimpleTopo() ) }
 
@@ -127,8 +133,9 @@ def Test():
        
 
    for host in net.hosts:
-       host.cmd('tc qdisc del dev %s-eth0 root'%host)              
-       host.cmd('tc qdisc add dev %s-eth0 root tbf rate 10Mbit latency 2s burst 15k mtu 1512'%host)              
+       #host.cmd('tc qdisc del dev %s-eth0 root'%host)              
+       #host.cmd('tc qdisc add dev %s-eth0 root tbf rate 10Mbit latency 2s burst 15k mtu 1512'%host)              
+       host.cmd('ethtool -K %s-eth0 tso off gso off ufo off'%host)
    #start mininet CLI
    CLI(net)
    #terminate

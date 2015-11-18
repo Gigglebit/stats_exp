@@ -74,17 +74,23 @@ def tcshow (e):
     entry = [dict(zip(entry_keys,row)) for row in matches_d]
     #parse tc show parent result
     result2 = subprocess.check_output(tccmd,shell=True)
-    print result2
-    parse_result2 = re.compile(r'qdisc\snetem\s+([0-9]+):\sdev\s([a-zA-Z0-9-]+)\sparent\s([0-9]+:[0-9]+)\slimit\s([0-9]+)\sdelay\s([0-9.]+)ms[a-zA-Z0-9_.:\s]+Sent\s([\d]+)\sbytes\s([\d]+)\spkt\s\(dropped\s([\d]+),\soverlimits\s([\d]+)\srequeues\s([\d]+)\)\s*backlog\s([\dA-Z]+)b\s([\d]+)p')
+    #print result2
+    parse_result2 = re.compile(r'qdisc\snetem\s+([0-9]+):\sdev\s([a-zA-Z0-9-]+)\sparent\s([0-9]+:[0-9]+)\slimit\s([0-9]+)\sdelay\s([0-9.]+)[mu]s[a-zA-Z0-9_.:\s]+Sent\s([\d]+)\sbytes\s([\d]+)\spkt\s\(dropped\s([\d]+),\soverlimits\s([\d]+)\srequeues\s([\d]+)\)\s*backlog\s([\dA-Z]+)b\s([\d]+)p')
     matches_d2 = parse_result2.findall(result2)
     netem_entry = [dict(zip(netem_keys,row)) for row in matches_d2]
-    print matches_d2
+    #print matches_d2
     #save everything into a tc_dict{idx:{dev1:{'RootNo':...},dev2:{'RootNo':...}}}
     for item in entry:
     	#print item
         for netem_item in netem_entry:
 	    if netem_item['Dev']==item['Dev']:
-                item.update({'P_Delay':netem_item['P_Delay']}) 
+		item.update({'P_Delay':netem_item['P_Delay']})
+                t = netem_item['BackB']
+                if t.endswith('K'):
+		  t = t[0:len(t)-1] + "000"
+		if t.endswith('M'):
+                  t = t[0:len(t)-1] + "000000"
+		item.update({'BackB':t}) 
         item.update({'delta_t': delta_t})
         dev_keys.append(item['Dev'])
     
@@ -103,7 +109,8 @@ def tcshow (e):
 
 class TControl(threading.Thread):
 	'''
-	A simple thread for controlling tcshow
+	A simple thread for controlling tcshow.
+	This function is triggered by timer event
 	'''
 	def __init__(self,e,counter):
 		super(TControl, self).__init__()
