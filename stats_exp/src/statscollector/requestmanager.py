@@ -33,7 +33,7 @@ def cal_bw_delay(entries_range,idx,path,link_cap,tc_result):
 	#print "index-range"
 	#print idx-entries_range
 
-	for i in xrange(idx-entries_range,idx,1):
+	for i in xrange(idx-entries_range+1,idx,1):
 		#list of one entry
 		l=[]
 		#link counter which indicates the current link index in link_cap
