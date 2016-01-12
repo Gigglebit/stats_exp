@@ -67,9 +67,13 @@ class agent(threading.Thread):
 		self.message = message
 	def run(self):
 		try:
+			print getNTPtime();
 			while self.keeprunning > 0:
-				
-				client(self.ip,self.port,cal_stats(['eth0'],getNTPtime()))
+				# start = time.time()
+				msg = cal_stats(['eth0'],'now')
+				client(self.ip,self.port, msg)
+				# end = time.time()
+				# print(end - start)
 				self.keeprunning-=1
 				time.sleep(self.runtime)
 		except KeyboardInterrupt:
