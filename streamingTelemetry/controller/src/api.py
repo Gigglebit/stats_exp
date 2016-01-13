@@ -12,35 +12,42 @@ app = Flask(__name__.split('.')[0])
 controller_id = 'winston'
 controller = Controller(controller_id)
 
-@app.route('/api/v1/register', methods=['POST'])
+@app.route('/api/v1/register', methods=['POST','GET'])
 def register_flow():
 	"""
     register
     """
-	response = None
-	logger.info("Register a flow")
-	json = request.json
 
-	srcIp=json['srcIp']
-	dstIp=json['dstIp']
-	srcPort=json['srcPort']
-	dstPort=json['dstPort']
-	proto=json['proto']
-	appType=json['appType']
-	response = controller.register_flow(srcIp,dstIp,srcPort,dstPort,proto,appType)
-	return jsonify(flow_id=response)
+	response = None
+	if request.method == 'POST':
+		logger.info("Register a flow")
+		json = request.json
+		srcIp=json['srcIp']
+		dstIp=json['dstIp']
+		srcPort=json['srcPort']
+		dstPort=json['dstPort']
+		proto=json['proto']
+		appType=json['appType']
+		response = controller.register_flow(srcIp,dstIp,srcPort,dstPort,proto,appType)
+		response = jsonify(flow_id=response)
+	else:
+		response = controller.get_all_flows()
+		response = jsonify(response=response)
+	return response
 
 @app.route('/api/v1/register/<flow_id>', methods=['GET','DELETE'])
-def flow_operations():
+def flow_operations(flow_id):
+	response = None
 	if request.method == 'GET':
-	    logger.info("Getting a flow:%s" %
+	    logger.info("Getting the flow:%s" %
 	                (flow_id))
 	    response = controller.get_registered_flow_info(flow_id)
-
+	    response = jsonify(response=response)
 	elif request.method == 'DELETE':
-	    logger.info("Disabling Path Monitoring For Registered Flow:%s" %
+	    logger.info("Deleting the flow:%s" %
 	                (flow_id))
 	    response = controller.delete_flow(flow_id)
+	    response = jsonify(flow_id=response,msg="the flow has been removed successfully")
 
 	return response
 

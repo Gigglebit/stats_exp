@@ -9,7 +9,8 @@ from mock import MagicMock
 from mage_exceptions import NoConnectedDevice, \
     NoConnectedBridge, \
     UserException, \
-    UnableToConnect
+    UnableToConnect, \
+    DBException
 
 from requests.exceptions import Timeout, \
     ConnectionError, \
@@ -18,7 +19,8 @@ from requests.exceptions import Timeout, \
 
 import logging
 logger = logging.getLogger(__name__)
-
+db = dict()
+db['flowTable']=[]
 class Controller(object):
     def __init__(self, hostname):
         assert hostname is not None
@@ -133,10 +135,79 @@ class Controller(object):
             self._process_error(r)
 
         return r.json()
-    def register_flow(self, srcIp,dstIp,srcPort,dstPort,proto,appType):
-    	flow_id = str(uuid.uuid4())
-    	return flow_id
+    ########
+    # Flow registration 
+    ########
+    def register_flow(self,srcIp,dstIp,srcPort,dstPort,proto,appType):
+		flow_id = ""
+		flow_id_in_db = checkFlowExistenceInDB(srcIp,dstIp,srcPort,dstPort,proto,appType)
+		if flow_id_in_db=="":
+			try:
+				flow_id = str(uuid.uuid4())
+				updateFlowInDB(srcIp,dstIp,srcPort,dstPort,proto,appType,flow_id)
+			except:
+				msg = "The data cannot be inserted in the DB"
+				logger.error(msg)
+				raise DBException(msg)
+		else:
+				msg = "The data exists in DB"
+				logger.error(msg)
+				flow_id=flow_id_in_db
+		return flow_id
+    def get_all_flows(self):
+		return db
+    def get_registered_flow_info(self, flow_id):
+    	flow = dict()
+    	try:
+    		flow = retrieveFlowFromDB(flow_id)
+    	except:
+	    	msg = "The data cannot be retrieved from the DB"
+	    	logger.error(msg)
+	    	raise DBException(msg)
+    	return flow
 
+    def delete_flow(self, flow_id):
+    	deletedFlowId = ""
+    	try:
+    		deletedFlowId = deleteFlowFromDB(flow_id)
+    	except:
+	    	msg = "The data cannot be retrieved from the DB"
+	    	logger.error(msg)
+	    	raise DBException(msg)
+    	return deletedFlowId
+
+######################
+# MockUp DB Operations
+######################
+def updateFlowInDB(srcIp,dstIp,srcPort,dstPort,proto,appType,flow_id):
+	db['flowTable'].append({
+			"srcIp":srcIp,
+			"dstIp":dstIp,
+			"srcPort":srcPort,
+			"dstPort":dstPort,
+			"proto":proto,
+			"appType":appType,
+			"flow_id":flow_id,
+	})
+def checkFlowExistenceInDB(srcIp,dstIp,srcPort,dstPort,proto,appType):
+	flow_id = ""
+	for entry in db['flowTable']:
+		if (entry['srcIp']==srcIp and  entry['dstIp']==dstIp and  entry['srcPort']==srcPort and entry['dstPort']==dstPort and entry['proto']==proto and entry['appType']==appType):
+			return entry['flow_id']
+	return flow_id
+def retrieveFlowFromDB(flow_id):
+	flow = dict()
+	for entry in db['flowTable']:
+		if entry['flow_id']==flow_id:
+			flow = entry
+	return flow
+def deleteFlowFromDB(flow_id):
+	deletedFlowId = ""
+	for entry in db['flowTable']:
+		if entry['flow_id']==flow_id:
+			deletedFlowId = flow_id
+			db['flowTable'].remove(entry)
+	return deletedFlowId
 
 class TestController(object):
     def test_controller_cannot_be_created_without_hostname(self):

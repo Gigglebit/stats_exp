@@ -24,20 +24,20 @@ class MageException(Exception):
         return int(self.http_code)
 
 
+
 class UserException(MageException):
     http_code = 400
     error_number = 4001
     message = "A General User Error Occured"
 
-
+class DBException(UserException):
+    error_number = 4003
+    message = "Unable to update the database"
+    
 class NoConnectedDevice(UserException):
     error_number = 4002
     message = "Unable to locate connected device"
 
-
-class NoConnectedDevices(UserException):
-    error_number = 4003
-    message = "Unable to see any connected devices"
 
 
 class NotFound(UserException):
