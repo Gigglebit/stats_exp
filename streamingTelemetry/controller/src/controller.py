@@ -139,12 +139,13 @@ class Controller(object):
     # Flow registration 
     ########
     def register_flow(self,srcIp,dstIp,srcPort,dstPort,proto,appType):
-		flow_id = ""
-		flow_id_in_db = checkFlowExistenceInDB(srcIp,dstIp,srcPort,dstPort,proto,appType)
-		if flow_id_in_db=="":
+		flowId = ""
+		flowIdInDb = check_flow_existence_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType)
+		if flowIdInDb=="":
 			try:
-				flow_id = str(uuid.uuid4())
-				updateFlowInDB(srcIp,dstIp,srcPort,dstPort,proto,appType,flow_id)
+				flowId  = str(uuid.uuid4())
+				update_flow_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType,flowId)
+				# run this asynchronously find_the_path(srcIp,dstIp,srcPort,dstPort,proto)
 			except:
 				msg = "The data cannot be inserted in the DB"
 				logger.error(msg)
@@ -152,34 +153,49 @@ class Controller(object):
 		else:
 				msg = "The data exists in DB"
 				logger.error(msg)
-				flow_id=flow_id_in_db
-		return flow_id
+				flowId = flowIdInDb
+		return flowId 
     def get_all_flows(self):
 		return db
-    def get_registered_flow_info(self, flow_id):
+    def get_registered_flow_info(self, flowId):
     	flow = dict()
     	try:
-    		flow = retrieveFlowFromDB(flow_id)
+    		flow = retrieve_flow_from_db(flowId)
     	except:
 	    	msg = "The data cannot be retrieved from the DB"
 	    	logger.error(msg)
 	    	raise DBException(msg)
     	return flow
 
-    def delete_flow(self, flow_id):
+    def delete_flow(self, flowId):
     	deletedFlowId = ""
     	try:
-    		deletedFlowId = deleteFlowFromDB(flow_id)
+    		deletedFlowId = delete_flow_from_db(flowId)
     	except:
 	    	msg = "The data cannot be retrieved from the DB"
 	    	logger.error(msg)
 	    	raise DBException(msg)
     	return deletedFlowId
+    #############################
+    # Monitoring requests handler
+    #############################
+    def enable_flow_monitoring(self, flow_id, interval, duration, negotiation, direction):
+    	logger.info("enabling flow monitor to all the probes along the path")
+    	# get_the_path('flow_id')
+    	# endpoint = "/monitor/%s/"
+    	# for node in nodes:
+    	#     self._generate_url(node['ipAddress'],endpoint)
+
+    	return ""
+    def get_flow_monitoring_info(self, flow_id):
+    	return ""
+    def disable_flow_monitoring(self, flow_id):
+    	return ""
 
 ######################
 # MockUp DB Operations
 ######################
-def updateFlowInDB(srcIp,dstIp,srcPort,dstPort,proto,appType,flow_id):
+def update_flow_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType,flow_id):
 	db['flowTable'].append({
 			"srcIp":srcIp,
 			"dstIp":dstIp,
@@ -187,25 +203,25 @@ def updateFlowInDB(srcIp,dstIp,srcPort,dstPort,proto,appType,flow_id):
 			"dstPort":dstPort,
 			"proto":proto,
 			"appType":appType,
-			"flow_id":flow_id,
+			"flowId":flow_id,
 	})
-def checkFlowExistenceInDB(srcIp,dstIp,srcPort,dstPort,proto,appType):
-	flow_id = ""
+def check_flow_existence_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType):
+	flowId = ""
 	for entry in db['flowTable']:
 		if (entry['srcIp']==srcIp and  entry['dstIp']==dstIp and  entry['srcPort']==srcPort and entry['dstPort']==dstPort and entry['proto']==proto and entry['appType']==appType):
-			return entry['flow_id']
-	return flow_id
-def retrieveFlowFromDB(flow_id):
+			return entry['flowId']
+	return flowId
+def retrieve_flow_from_db(flowId):
 	flow = dict()
 	for entry in db['flowTable']:
-		if entry['flow_id']==flow_id:
+		if entry['flowId']==flowId:
 			flow = entry
 	return flow
-def deleteFlowFromDB(flow_id):
+def delete_flow_from_db(flowId):
 	deletedFlowId = ""
 	for entry in db['flowTable']:
-		if entry['flow_id']==flow_id:
-			deletedFlowId = flow_id
+		if entry['flowId']==flowId:
+			deletedFlowId = flowId
 			db['flowTable'].remove(entry)
 	return deletedFlowId
 
