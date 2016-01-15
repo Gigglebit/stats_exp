@@ -2,10 +2,11 @@ import json
 import datetime
 import pytest
 import requests
-import time
+from time import gmtime, strftime
 import uuid
 from mock import MagicMock
-
+from models.db import db
+from models.flow import Flow
 from mage_exceptions import NoConnectedDevice, \
     NoConnectedBridge, \
     UserException, \
@@ -19,8 +20,6 @@ from requests.exceptions import Timeout, \
 
 import logging
 logger = logging.getLogger(__name__)
-db = dict()
-db['flowTable']=[]
 class Controller(object):
     def __init__(self, hostname):
         assert hostname is not None
@@ -139,24 +138,26 @@ class Controller(object):
     # Flow registration 
     ########
     def register_flow(self,srcIp,dstIp,srcPort,dstPort,proto,appType):
-		flowId = ""
-		flowIdInDb = check_flow_existence_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType)
-		if flowIdInDb=="":
-			try:
-				flowId  = str(uuid.uuid4())
-				update_flow_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType,flowId)
-				# run this asynchronously find_the_path(srcIp,dstIp,srcPort,dstPort,proto)
-			except:
-				msg = "The data cannot be inserted in the DB"
-				logger.error(msg)
-				raise DBException(msg)
-		else:
-				msg = "The data exists in DB"
-				logger.error(msg)
-				flowId = flowIdInDb
-		return flowId 
+        flowId = ""
+        flowIdInDb = check_flow_existence_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType)
+        if flowIdInDb=="":
+            try:
+            	flowId  = str(uuid.uuid4())
+            	add_flow_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType,flowId)
+            	# run this asynchronously find_the_path(srcIp,dstIp,srcPort,dstPort,proto)
+            except:
+            	msg = "The data cannot be inserted in the DB"
+            	logger.error(msg)
+            	raise DBException(msg)
+        else:
+        		msg = "The data exists in DB"
+        		logger.error(msg)
+        		flowId = flowIdInDb
+        return flowId 
     def get_all_flows(self):
-		return db
+        flows = []
+        flows = retrieve_all_flows_from_db()
+        return flows
     def get_registered_flow_info(self, flowId):
     	flow = dict()
     	try:
@@ -166,13 +167,20 @@ class Controller(object):
 	    	logger.error(msg)
 	    	raise DBException(msg)
     	return flow
+    def delete_all_flows(self):
+        try:
+            delete_all_flows_from_db()
+        except:
+            msg = "Deleting all data from the DB failed"
+            logger.error(msg)
+            raise DBException(msg)
 
     def delete_flow(self, flowId):
     	deletedFlowId = ""
     	try:
     		deletedFlowId = delete_flow_from_db(flowId)
     	except:
-	    	msg = "The data cannot be retrieved from the DB"
+	    	msg = "The data cannot be deleted from the DB"
 	    	logger.error(msg)
 	    	raise DBException(msg)
     	return deletedFlowId
@@ -195,35 +203,40 @@ class Controller(object):
 ######################
 # MockUp DB Operations
 ######################
-def update_flow_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType,flow_id):
-	db['flowTable'].append({
-			"srcIp":srcIp,
-			"dstIp":dstIp,
-			"srcPort":srcPort,
-			"dstPort":dstPort,
-			"proto":proto,
-			"appType":appType,
-			"flowId":flow_id,
-	})
+def add_flow_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType,flowId):
+    now = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+    update = now
+
+    f = Flow(flowId,srcIp,dstIp,srcPort,dstPort,proto,appType,now,update)
+
+    db.session.add(f)
+    db.session.commit()
 def check_flow_existence_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType):
-	flowId = ""
-	for entry in db['flowTable']:
-		if (entry['srcIp']==srcIp and  entry['dstIp']==dstIp and  entry['srcPort']==srcPort and entry['dstPort']==dstPort and entry['proto']==proto and entry['appType']==appType):
-			return entry['flowId']
-	return flowId
+    flowId = ""
+    f=Flow.query.filter_by(srcIp=srcIp).filter_by(dstIp=dstIp).filter_by(srcPort=srcPort).filter_by(dstPort=dstPort).filter_by(proto=proto).filter_by(appType=appType).first()
+    if f:
+        flowId = f.to_json()['flowId']
+    return flowId
 def retrieve_flow_from_db(flowId):
-	flow = dict()
-	for entry in db['flowTable']:
-		if entry['flowId']==flowId:
-			flow = entry
-	return flow
+    flow=dict()
+    f = Flow.query.filter_by(flowId=flowId).first()
+    if f:
+        flow = f.to_json()
+    return flow
+def retrieve_all_flows_from_db():
+    flows = []
+    for raw_entry in Flow.query.all():
+        entry = raw_entry.to_json()
+        flows.append(entry)
+    return flows
 def delete_flow_from_db(flowId):
-	deletedFlowId = ""
-	for entry in db['flowTable']:
-		if entry['flowId']==flowId:
-			deletedFlowId = flowId
-			db['flowTable'].remove(entry)
-	return deletedFlowId
+    f = Flow.query.filter_by(flowId=flowId).first()
+    db.session.delete(f)
+    db.session.commit()
+    return flowId
+def delete_all_flows_from_db():
+    db.session.query(Flow).delete()
+    db.session.commit()
 
 class TestController(object):
     def test_controller_cannot_be_created_without_hostname(self):

@@ -12,7 +12,7 @@ app = Flask(__name__.split('.')[0])
 controller_id = 'winston'
 controller = Controller(controller_id)
 
-@app.route('/api/v1/register', methods=['POST','GET'])
+@app.route('/api/v1/register', methods=['POST','GET','DELETE'])
 def register_flow():
 	"""
     register
@@ -29,43 +29,47 @@ def register_flow():
 		proto=json['proto']
 		appType=json['appType']
 		response = controller.register_flow(srcIp,dstIp,srcPort,dstPort,proto,appType)
-		response = jsonify(flow_id=response)
+		response = jsonify(flowId=response)
+	elif request.method == 'DELETE':
+		controller.delete_all_flows()
+		response = jsonify(msg="All flows have been removed successfully")
 	else:
 		response = controller.get_all_flows()
 		response = jsonify(response=response)
+
 	return response
 
-@app.route('/api/v1/register/<flow_id>', methods=['GET','DELETE'])
-def flow_operations(flow_id):
+@app.route('/api/v1/register/<flowId>', methods=['GET','DELETE'])
+def flow_operations(flowId):
 	response = None
 	if request.method == 'GET':
 	    logger.info("Getting the flow:%s" %
-	                (flow_id))
-	    response = controller.get_registered_flow_info(flow_id)
+	                (flowId))
+	    response = controller.get_registered_flow_info(flowId)
 	    response = jsonify(response=response)
 	elif request.method == 'DELETE':
 	    logger.info("Deleting the flow:%s" %
-	                (flow_id))
-	    response = controller.delete_flow(flow_id)
-	    response = jsonify(flow_id=response,msg="the flow has been removed successfully")
+	                (flowId))
+	    response = controller.delete_flow(flowId)
+	    response = jsonify(flowId=response,msg="the flow has been removed successfully")
 
 	return response
 
-@app.route('/api/v1/monitor/<flow_id>', methods=['POST', 'GET', 'DELETE'])
-def monitor_flow(flow_id):
+@app.route('/api/v1/monitor/<flowId>', methods=['POST', 'GET', 'DELETE'])
+def monitor_flow(flowId):
 	"""
     Monitoring is to be done on the lan port
     """
 	response = None
 	if request.method == 'POST':
 		logger.info("Enabling Path Monitoring For Registered Flow:%s" % 
-				(flow_id))
+				(flowId))
 		json = request.json
 		interval = json['interval'],
 		duration = json['duration'],
 		negotiation = json['negotiation'],
 		direction = json['direction']
-		response = controller.enable_flow_monitoring(flow_id,
+		response = controller.enable_flow_monitoring(flowId,
 			interval,
 			duration,
 			negotiation,
@@ -73,13 +77,13 @@ def monitor_flow(flow_id):
 
 	elif request.method == 'GET':
 	    logger.info("Getting Path Monitoring Info For Registered Flow:%s" %
-	                (flow_id))
-	    response = controller.get_flow_monitoring_info(flow_id)
+	                (flowId))
+	    response = controller.get_flow_monitoring_info(flowId)
 
 	elif request.method == 'DELETE':
 	    logger.info("Disabling Path Monitoring For Registered Flow:%s" %
-	                (flow_id))
-	    response = controller.disable_flow_monitoring(flow_id)
+	                (flowId))
+	    response = controller.disable_flow_monitoring(flowId)
 
 	return response
 
