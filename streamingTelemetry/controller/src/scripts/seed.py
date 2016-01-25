@@ -1,4 +1,3 @@
-#!/bin/env python
 from models.db import db
 
 from models.flow import Flow

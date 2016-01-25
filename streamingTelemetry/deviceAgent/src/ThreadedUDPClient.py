@@ -7,6 +7,9 @@ def client(ip, port, message):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     print 'The client is sending message: '+ str(message) 
     print sock.getsockname()
+    print ip 
+    print port 
+    print message
     try:
         sock.sendto(str(message) + "\n", (ip, port))
     finally:

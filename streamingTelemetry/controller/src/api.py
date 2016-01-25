@@ -11,7 +11,18 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__.split('.')[0])
 controller_id = 'winston'
 controller = Controller(controller_id)
+@app.route('/api/v1/scan', methods=['POST'])
+def scan():
 
+	if request.method == 'POST':		
+		logger.info("Scan the current network")
+		json = request.json
+		ipAddresses = json['ipAddresses']
+		validateIpAddress(ipAddresses);
+		msg = controller.scan_networks(ipAddresses)
+		return jsonify(response = msg) 
+def validateIpAddress(ipAddresses):
+    pass
 @app.route('/api/v1/register', methods=['POST','GET','DELETE'])
 def register_flow():
 	"""
@@ -89,6 +100,7 @@ def monitor_flow(flowId):
 
 def run_server():
     app.run(debug=True, host='0.0.0.0', port=8080)
+
 #
 # ERROR HANDLING
 #

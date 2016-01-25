@@ -4,9 +4,14 @@ import pytest
 import requests
 from time import gmtime, strftime
 import uuid
+import subprocess
 from mock import MagicMock
+import grequests
+from flask import jsonify
+# database
 from models.db import db
 from models.flow import Flow
+# exceptions
 from mage_exceptions import NoConnectedDevice, \
     NoConnectedBridge, \
     UserException, \
@@ -20,22 +25,45 @@ from requests.exceptions import Timeout, \
 
 import logging
 logger = logging.getLogger(__name__)
+db.create_all()
 class Controller(object):
     def __init__(self, hostname):
         assert hostname is not None
         assert hostname is not ''
         self.hostname = hostname
-        self.port = 8080
+        self.port = 5000
         self.protocol = "http"
         self.markup = "json"
         self.headers = {'Content-Type': 'application/json',
                         'Accept': 'application/json'}
+        
+    def _get_grequests(self, ipAddresses, endpoint):
+        urls = []
+        for ip in ipAddresses:
+            self.hostname = ip
+            urls.append(self._generate_url(endpoint))
+        print urls 
+        rs = (grequests.get(u) for u in urls)
+        responses = grequests.map(rs,exception_handler=exception_handler)
+        for response in responses:
+            print response.content
+
+    def _post_grequests(self, ipAddresses, endpoint, params):
+        urls = []
+        for ip in ipAddresses:
+            self.hostname = ip
+            urls.append(self._generate_url(endpoint))
+        print urls 
+        rs = (grequests.post(u, json=params) for u in urls)
+        responses = grequests.map(rs,exception_handler=exception_handler)
+        for response in responses:
+            print response.content
 
     def _generate_url(self, endpoint):
         assert endpoint is not None
         assert endpoint is not ''
 
-        url = "%s://%s:%s/wm/%s" % (self.protocol,
+        url = "%s://%s:%s/api/ag/v1/%s" % (self.protocol,
                                     self.hostname,
                                     self.port,
                                     endpoint)
@@ -62,7 +90,7 @@ class Controller(object):
         logger.debug(self.headers)
         logger.info(url)
 
-        r = requests.get(url, headers=self.headers)
+        r = requests.get(url, headers=self.headers,timeout=1)
         logger.info("Response from Controller controller :  %s " % r)
         r.raise_for_status()
 
@@ -135,6 +163,28 @@ class Controller(object):
 
         return r.json()
     ########
+    # Scan Networks
+    ########
+    def scan_networks(self,ipAddresses):
+        command = "nmap -sn %s"%ipAddresses
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        output = stdout.splitlines()
+        hosts=output[-1].split()[5].split('(')[1]
+        ips = []
+        latencies = []
+        for i in range(2,int(hosts)*2+2):
+                if i%2==0:
+                   ips.append(output[i].split()[-1])
+                else:
+                   latencies.append(output[i].split()[-2].split('(')[1])
+        process.wait()
+        print ips
+        print latencies
+        endpoint = 'link_info'
+        self._get_grequests(ips, endpoint)
+        return 'completed'
+    ########
     # Flow registration 
     ########
     def register_flow(self,srcIp,dstIp,srcPort,dstPort,proto,appType):
@@ -188,17 +238,27 @@ class Controller(object):
     # Monitoring requests handler
     #############################
     def enable_flow_monitoring(self, flow_id, interval, duration, negotiation, direction):
-    	logger.info("enabling flow monitor to all the probes along the path")
-    	# get_the_path('flow_id')
-    	# endpoint = "/monitor/%s/"
-    	# for node in nodes:
-    	#     self._generate_url(node['ipAddress'],endpoint)
+        logger.info("enabling flow monitor to all the probes along the path")
+        # nodes = self.get_the_path('flow_id')
+        ipAddresses = ['10.1.1.3','10.1.1.4']
+        endpoint = "config"
+        params = {'interval':interval[0], 'duration':duration[0], 'controllerIp':'10.1.1.2', 'controllerPort':'9999'}
+        self._post_grequests(ipAddresses, endpoint, params)
+        endpoint = "monitor"
 
-    	return ""
+        self._get_grequests(ipAddresses, endpoint)
+
+    	return "Enabled Flow Monitoring"
     def get_flow_monitoring_info(self, flow_id):
     	return ""
     def disable_flow_monitoring(self, flow_id):
     	return ""
+    def get_the_path(self, flow_id):
+        return ""
+
+
+def exception_handler(request, exception):
+    print "Request failed"
 
 ######################
 # MockUp DB Operations
