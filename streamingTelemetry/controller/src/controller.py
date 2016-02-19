@@ -273,13 +273,13 @@ def add_flow_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType,flowId):
     db.session.commit()
 def check_flow_existence_in_db(srcIp,dstIp,srcPort,dstPort,proto,appType):
     flowId = ""
-    f=Flow.query.filter_by(srcIp=srcIp).filter_by(dstIp=dstIp).filter_by(srcPort=srcPort).filter_by(dstPort=dstPort).filter_by(proto=proto).filter_by(appType=appType).first()
+    f=Flow.query.filter_by(src_ip=srcIp).filter_by(dst_ip=dstIp).filter_by(src_port=srcPort).filter_by(dst_port=dstPort).filter_by(proto=proto).filter_by(app_type=appType).first()
     if f:
         flowId = f.to_json()['flowId']
     return flowId
 def retrieve_flow_from_db(flowId):
     flow=dict()
-    f = Flow.query.filter_by(flowId=flowId).first()
+    f = Flow.query.filter_by(flow_id=flowId).first()
     if f:
         flow = f.to_json()
     return flow
@@ -290,7 +290,7 @@ def retrieve_all_flows_from_db():
         flows.append(entry)
     return flows
 def delete_flow_from_db(flowId):
-    f = Flow.query.filter_by(flowId=flowId).first()
+    f = Flow.query.filter_by(flow_id=flowId).first()
     db.session.delete(f)
     db.session.commit()
     return flowId
