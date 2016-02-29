@@ -58,8 +58,8 @@ def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
       "10.1.1.5"
    ]
    intfs = [
-      "eth1",
-      "eth1"
+      "swp3",
+      "swp1"
    ]
    port = "8080"
    global jpip_stats 
@@ -67,6 +67,7 @@ def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
    start_urls = []
    stats_urls = []
    num_hosts = 0
+   
    for host in hosts:
       endpoint = "http://"+host+":"+port
       start_urls.append(endpoint+"/start")
@@ -111,8 +112,10 @@ def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
 #    for i in range(len(lists)):
 #       print lists[i]
 def combine_results(num_hosts, results):
+   float_formatter = lambda x: "%.4f" % x
    result = []
    npr = np.array(results)
+   npr.set_printoptions(formatter={'float_kind':float_formatter})
    print npr.shape
    if npr.shape == (2, 1):
       return ""
