@@ -67,7 +67,6 @@ def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
    start_urls = []
    stats_urls = []
    num_hosts = 0
-   
    for host in hosts:
       endpoint = "http://"+host+":"+port
       start_urls.append(endpoint+"/start")
@@ -112,10 +111,8 @@ def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
 #    for i in range(len(lists)):
 #       print lists[i]
 def combine_results(num_hosts, results):
-   float_formatter = lambda x: "%.4f" % x
    result = []
    npr = np.array(results)
-   npr.set_printoptions(formatter={'float_kind':float_formatter})
    print npr.shape
    if npr.shape == (2, 1):
       return ""
@@ -139,7 +136,7 @@ def combine_results(num_hosts, results):
       for j in range(num_hosts):
          diff = agent_index[i] - npr[j,i,0]
          if npr[j,i+diff,1] > delta_t:
-            delta_t = npr[j,i+diff,1]
+            delta_t = rnd(npr[j,i+diff,1],4)
          if npr[j,i+diff,2] > most_backlogged_bytes:
             most_backlogged_bytes = npr[j,i+diff,2]
          if npr[j,i+diff,3] > most_bandwidth_used_bytes:
