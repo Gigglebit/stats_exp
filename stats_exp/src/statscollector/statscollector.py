@@ -32,14 +32,14 @@ def get_path_stats(start_ip, end_ip,earliest_idx,num_entries):
    return result
 
 def find_link_cap(start_ip,end_ip):
-   if start_ip == "10.0.0.2":
+   if start_ip == "10.0.0.1":
       retVal = [5,10]#[5Mbps,10Mbps]
       return retVal
    if end_ip == "10.0.0.2":
       retVal = [5,10]
       return retVal   
 def find_path(start_ip,end_ip):
-   if start_ip == "10.0.0.2":
+   if start_ip == "10.0.0.1":
       retVal = ["s1-eth2","s2-eth1","s3-eth2"] # the first two are the relevant switches, the last one is were to get the delay
       return retVal
    if end_ip == "10.0.0.2":
